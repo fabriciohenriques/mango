@@ -6,7 +6,7 @@ using static Mango.Web.Utility.SD;
 
 namespace Mango.Web.Service
 {
-    public class BaseService : IBaseService
+    public abstract class BaseService : IBaseService
     {
         private const string APPLICATION_JSON = "application/json";
         private readonly IHttpClientFactory _httpClientFactory;
