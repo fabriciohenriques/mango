@@ -14,6 +14,7 @@ namespace Mango.Services.CouponAPI
                 config.CreateMap<Coupon, CouponDto>();
             });
 
+            mappingConfig.AssertConfigurationIsValid();
             return mappingConfig;
         }
     }
