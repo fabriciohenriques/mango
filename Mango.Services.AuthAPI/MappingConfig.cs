@@ -19,6 +19,8 @@ namespace Mango.Services.AuthAPI
                 .ForMember(d => d.Name, o => o.MapFrom(s => s.Name));
 
                 config.CreateMap<ApplicationUser, UserDto>();
+
+                config.CreateMap<ApplicationUser, LoginResponseDto>();
             });
 
             return mappingConfig;
