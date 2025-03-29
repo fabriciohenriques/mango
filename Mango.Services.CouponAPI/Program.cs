@@ -25,7 +25,6 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    var config = AutoMapper.Configuration.ValidationContext.
     app.UseSwagger();
     app.UseSwaggerUI();
 }
