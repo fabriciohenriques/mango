@@ -10,17 +10,20 @@ namespace Mango.Services.AuthAPI.Service
     public class AuthService : IAuthService
     {
         private readonly AppDbContext _db;
-        private IMapper _mapper;
+        private readonly IJwtTokenGenerator _jwtTokenGenerator;
+        private readonly IMapper _mapper;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
 
         public AuthService(
             AppDbContext db,
+            IJwtTokenGenerator jwtTokenGenerator,
             IMapper mapper,
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager)
         {
             _db = db;
+            _jwtTokenGenerator = jwtTokenGenerator;
             _mapper = mapper;
             _userManager = userManager;
             _roleManager = roleManager;
@@ -36,9 +39,8 @@ namespace Mango.Services.AuthAPI.Service
 
             if (user != null && isValid)
             {
-                //Generate token
                 var response = _mapper.Map<LoginResponseDto>(user);
-                response.Token = string.Empty;
+                response.Token = _jwtTokenGenerator.GenerateToken(user);
                 return response;
             }
             else
