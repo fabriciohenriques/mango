@@ -58,6 +58,8 @@ namespace Mango.Services.AuthAPI.Service
                 {
                     var userToReturn = await _userManager.FindByEmailAsync(registrationRequestDto.Email);
 
+                    await AssignRole(userToReturn, "user");
+
                     var userDto = _mapper.Map<UserDto>(user);
 
                     return string.Empty;
@@ -69,6 +71,32 @@ namespace Mango.Services.AuthAPI.Service
             {
                 return "Error encountered";
             }
+        }
+
+        public async Task<bool> AssignRole(string email, string? roleName)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            return await AssignRole(user, roleName);
+        }
+
+        private async Task<bool> AssignRole(ApplicationUser? user, string? roleName)
+        {
+            if (user != null && !string.IsNullOrWhiteSpace(roleName))
+            {
+                var upperRoleName = roleName.ToUpper().Trim();
+                if (!await _roleManager.RoleExistsAsync(upperRoleName))
+                {
+                    var createRoleResult = await _roleManager.CreateAsync(new IdentityRole(upperRoleName));
+                    if (!createRoleResult.Succeeded)
+                        return false;
+                }
+
+                var result = await _userManager.AddToRoleAsync(user, upperRoleName);
+
+                return result.Succeeded;
+            }
+
+            return false;
         }
     }
 }
