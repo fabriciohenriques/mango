@@ -9,6 +9,7 @@ namespace Mango.Web.Service
         public AuthService(IHttpClientFactory httpClientFactory)
             : base(httpClientFactory)
         {
+
         }
 
         public async Task<ResponseDto?> AssignRoleAsync(AssignRoleDto assignRoleDto) =>
@@ -16,7 +17,7 @@ namespace Mango.Web.Service
             {
                 ApiType = SD.ApiType.POST,
                 Data = assignRoleDto,
-                Url = SD.AuthAPIBase + "api/assignrole",
+                Url = SD.AuthAPIBase + "/api/auth/assignrole",
             });
 
         public async Task<ResponseDto?> LoginAsync(LoginRequestDto loginRequestDto) =>
@@ -24,7 +25,7 @@ namespace Mango.Web.Service
             {
                 ApiType = SD.ApiType.POST,
                 Data = loginRequestDto,
-                Url = SD.AuthAPIBase + "api/login",
+                Url = SD.AuthAPIBase + "/api/auth/login",
             });
 
         public async Task<ResponseDto?> RegisterAsync(RegistrationRequestDto registrationRequestDto) =>
@@ -32,7 +33,7 @@ namespace Mango.Web.Service
             {
                 ApiType = SD.ApiType.POST,
                 Data = registrationRequestDto,
-                Url = SD.AuthAPIBase + "api/register",
+                Url = SD.AuthAPIBase + "/api/auth/register",
             });
     }
 }
