@@ -29,7 +29,7 @@ namespace Mango.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Login(LoginRequestDto obj)
+        public async Task<IActionResult> Login(LoginRequestDto obj, [FromQuery]string returnUrl)
         {
             var responseDto = await _authService.LoginAsync(obj);
             if (responseDto != null && responseDto.IsSuccess)
@@ -41,6 +41,9 @@ namespace Mango.Web.Controllers
                 _tokenProvider.SetToken(loginResponseDto.Token);
 
                 TempData["success"] = "Login Successful";
+                if (!string.IsNullOrEmpty(returnUrl))
+                    return Redirect(returnUrl);
+
                 return RedirectToAction("Index", "Home");
             }
 
