@@ -2,7 +2,7 @@
 using Mango.Web.Service.IService;
 using Newtonsoft.Json;
 using System.Text;
-using static Mango.Web.Utility.SD;
+using Mango.Web.Utility;
 
 namespace Mango.Web.Service
 {
@@ -31,9 +31,9 @@ namespace Mango.Web.Service
 
                 message.Method = requestDto.ApiType switch
                 {
-                    ApiType.DELETE => HttpMethod.Delete,
-                    ApiType.POST => HttpMethod.Post,
-                    ApiType.PUT => HttpMethod.Put,
+                    SD.ApiType.DELETE => HttpMethod.Delete,
+                    SD.ApiType.POST => HttpMethod.Post,
+                    SD.ApiType.PUT => HttpMethod.Put,
                     _ => HttpMethod.Get,
                 };
 
