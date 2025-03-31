@@ -40,7 +40,8 @@ namespace Mango.Services.AuthAPI.Service
             if (user != null && isValid)
             {
                 var response = _mapper.Map<LoginResponseDto>(user);
-                response.Token = _jwtTokenGenerator.GenerateToken(user);
+                var roles = await _userManager.GetRolesAsync(user);
+                response.Token = _jwtTokenGenerator.GenerateToken(user, roles);
                 return response;
             }
             else
