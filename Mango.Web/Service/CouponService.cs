@@ -6,8 +6,10 @@ namespace Mango.Web.Service
 {
     public class CouponService : BaseService, ICouponService
     {
-        public CouponService(IHttpClientFactory httpClientFactory)
-            : base(httpClientFactory)
+        public CouponService(
+            IHttpClientFactory httpClientFactory,
+            ITokenProvider tokenProvider)
+            : base(httpClientFactory, tokenProvider)
         {
         }
 
