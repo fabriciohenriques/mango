@@ -27,10 +27,7 @@ namespace Mango.Web.Controllers
             return View(list);
         }
 
-        public async Task<IActionResult> CouponCreate()
-        {
-            return View();
-        }
+        public IActionResult CouponCreate() => View();
 
         [HttpPost]
         public async Task<IActionResult> CouponCreate(CouponDto model)
@@ -60,6 +57,7 @@ namespace Mango.Web.Controllers
             }
             else
                 TempData["error"] = response?.Message;
+
             return NotFound();
         }
 
