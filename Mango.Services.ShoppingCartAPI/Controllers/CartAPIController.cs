@@ -5,6 +5,7 @@ using Mango.Services.ShoppingCartAPI.Models.Dto;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.PortableExecutable;
 
 namespace Mango.Services.ShoppingCartAPI.Controllers
 {
@@ -39,22 +40,30 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                     var cartHeaderToDb = await _db.AddAsync(cartHeader);
                     var cartDetail = _mapper.Map<CartDetail>(cartDto.CartDetails.First());
                     cartDetail.CartHeader = cartHeader;
-                    var cartDetailToDb = await _db.AddAsync(cartDetail);
+                    await _db.AddAsync(cartDetail);
 
                     await _db.SaveChangesAsync();
                 }
                 else
                 {
-                    var cartDetailsFromDb = await _db.CartDetails.FirstAsync(cd => cd.ProductId == cartDto.CartDetails.First().ProductId && cd.CartHeaderId == cartHeaderFromDb.CartHeaderId);
+                    var cartDetailsFromDb = await _db.CartDetails.FirstOrDefaultAsync(cd => cd.ProductId == cartDto.CartDetails.First().ProductId && cd.CartHeaderId == cartHeaderFromDb.CartHeaderId);
                     if (cartDetailsFromDb == null)
                     {
-                        //create cartdetail
+                        var cartDetail = _mapper.Map<CartDetail>(cartDto.CartDetails.First());
+                        cartDetail.CartHeader = cartHeaderFromDb;
+                        await _db.AddAsync(cartDetail);
+
+                        await _db.SaveChangesAsync();
                     }
                     else
                     {
-                        //update count
+                        cartDetailsFromDb.Count = cartDto.CartDetails.First().Count;
+                        _db.Update(cartDetailsFromDb);
+                        await _db.SaveChangesAsync();
                     }
                 }
+
+                _response.Result = cartDto;
             }
             catch (Exception ex)
             {
