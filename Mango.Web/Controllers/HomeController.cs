@@ -32,10 +32,19 @@ public class HomeController : Controller
         return View(list);
     }
 
-    [Authorize(Roles = "ADMIN")]
-    public IActionResult Privacy()
+    [Authorize]
+    public async Task<IActionResult> Details(int productId)
     {
-        return View();
+        var response = await _productService.GetProductAsync(productId);
+        if (response != null && response.IsSuccess)
+        {
+            var productDto = JsonConvert.DeserializeObject<ProductDto>(response.Result.ToString());
+            return View(productDto);
+        }
+        else
+            TempData["error"] = response?.Message;
+
+        return RedirectToAction(nameof(Index));
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
