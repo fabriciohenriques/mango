@@ -28,7 +28,7 @@ namespace Mango.Services.ProductAPI.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "ADMIN,USER")]
+        [AllowAnonymous]
         public async Task<ResponseDto> Get()
         {
             try
