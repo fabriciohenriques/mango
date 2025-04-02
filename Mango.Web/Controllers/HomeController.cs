@@ -33,7 +33,7 @@ public class HomeController : Controller
     }
 
     [Authorize]
-    public async Task<IActionResult> Details(int productId)
+    public async Task<IActionResult> ProductDetails(int productId)
     {
         var response = await _productService.GetProductAsync(productId);
         if (response != null && response.IsSuccess)
