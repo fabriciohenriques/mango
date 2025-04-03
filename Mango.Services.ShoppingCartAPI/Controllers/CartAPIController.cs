@@ -2,6 +2,7 @@
 using Mango.Services.ShoppingCartAPI.Data;
 using Mango.Services.ShoppingCartAPI.Models;
 using Mango.Services.ShoppingCartAPI.Models.Dto;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,6 +25,29 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             _mapper = mapper;
         }
 
+        [HttpGet("getcart/{userId}")]
+        public async Task<ResponseDto> GetCart(Guid userId)
+        {
+            try
+            {
+                var cartDb = await _db.CartHeaders.Include(ch => ch.CartDetails).FirstOrDefaultAsync(ch => ch.UserId == userId);
+
+                var cartDto = new CartDto
+                {
+                    CartHeader = _mapper.Map<CartHeaderDto>(cartDb),
+                    CartDetails = _mapper.Map<IEnumerable<CartDetailDto>>(cartDb.CartDetails),
+                };
+
+                _response.Result = cartDto;
+            }
+            catch (Exception ex)
+            {
+                _response.Message = ex.Message;
+                _response.IsSuccess = false;
+            }
+
+            return _response;
+        }
         [HttpPost]
         public async Task<ResponseDto> CartUpsert(CartDto cartDto)
         {
@@ -73,7 +97,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         }
 
         [HttpPost("RemoveCartDetail")]
-        public async Task<IActionResult> RemoveCartDetail([FromBody] int carDetailId)
+        public async Task<ResponseDto> RemoveCartDetail([FromBody] int carDetailId)
         {
             try
             {

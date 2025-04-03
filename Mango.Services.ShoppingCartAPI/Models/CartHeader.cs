@@ -10,7 +10,7 @@ namespace Mango.Services.ShoppingCartAPI.Models
         public Guid UserId { get; set; }
         [StringLength(10)]
         public string? CouponCode { get; set; }
-
+        public ICollection<CartDetail>? CartDetails { get; set; }
         [NotMapped]
         public double Discount { get; set; }
         [NotMapped]
