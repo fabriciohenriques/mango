@@ -14,16 +14,19 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
     {
         private ResponseDto _response;
         private readonly AppDbContext _db;
+        private readonly ICouponService _couponService;
         private readonly IMapper _mapper;
         private readonly IProductService _productService;
 
         public CartAPIController(
             AppDbContext db,
+            ICouponService couponService,
             IMapper mapper,
             IProductService productService)
         {
             _response = new ResponseDto();
             _db = db;
+            _couponService = couponService;
             _mapper = mapper;
             _productService = productService;
         }
@@ -36,35 +39,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                 var cartDb = await _db.CartHeaders.FirstOrDefaultAsync(ch => ch.UserId == cartDto.CartHeader.UserId);
                 if (cartDb != null)
                 {
-                    cartDb.CouponCode = cartDto.CartHeader.CouponCode;
-                    _db.CartHeaders.Update(cartDb);
-                    await _db.SaveChangesAsync();
-                    _response.IsSuccess = true;
-                }
-                else
-                {
-                    _response.IsSuccess = false;
-                    _response.Message = "Not found.";
-                }
-            }
-            catch (Exception ex)
-            {
-                _response.IsSuccess = false;
-                _response.Message = ex.Message;
-            }
-
-            return _response;
-        }
-
-        [HttpPost("RemoveCoupon")]
-        public async Task<ResponseDto> RemoveCoupon([FromBody] CartDto cartDto)
-        {
-            try
-            {
-                var cartDb = await _db.CartHeaders.FirstOrDefaultAsync(ch => ch.UserId == cartDto.CartHeader.UserId);
-                if (cartDb != null)
-                {
-                    cartDb.CouponCode = default;
+                    cartDb.CouponCode = string.IsNullOrEmpty(cartDto.CartHeader.CouponCode) ? default : cartDto.CartHeader.CouponCode;
                     _db.CartHeaders.Update(cartDb);
                     await _db.SaveChangesAsync();
                     _response.IsSuccess = true;
@@ -103,6 +78,15 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                 {
                     item.Product = products.FirstOrDefault(p => p.ProductId == item.ProductId);
                     cartDto.CartHeader.CartTotal += item.Count * item.Product.Price;
+                }
+
+                if (!string.IsNullOrEmpty(cartDb.CouponCode))
+                {
+                    var coupon = await _couponService.GetCouponByCode(cartDb.CouponCode);
+
+                    cartDto.CartHeader.Discount = coupon.DiscountAmount;
+                    if (coupon != null && cartDto.CartHeader.CartTotal >= coupon.MinAmount)
+                        cartDto.CartHeader.CartTotal -= cartDto.CartHeader.CartTotal * coupon.DiscountAmount / 100;
                 }
 
                 _response.Result = cartDto;

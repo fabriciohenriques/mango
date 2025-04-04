@@ -62,6 +62,7 @@ namespace Mango.Services.CouponAPI.Controllers
         }
 
         [HttpGet("GetByCode/{code}")]
+        [AllowAnonymous]
         public async Task<ResponseDto> Get(string code)
         {
             try
