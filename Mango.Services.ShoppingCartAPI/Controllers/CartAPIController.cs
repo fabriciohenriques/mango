@@ -3,7 +3,6 @@ using Mango.Services.ShoppingCartAPI.Data;
 using Mango.Services.ShoppingCartAPI.Models;
 using Mango.Services.ShoppingCartAPI.Models.Dto;
 using Mango.Services.ShoppingCartAPI.Service.IService;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,6 +26,62 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             _db = db;
             _mapper = mapper;
             _productService = productService;
+        }
+
+        [HttpPost("ApplyCoupon")]
+        public async Task<ResponseDto> ApplyCoupon([FromBody] CartDto cartDto)
+        {
+            try
+            {
+                var cartDb = await _db.CartHeaders.FirstOrDefaultAsync(ch => ch.UserId == cartDto.CartHeader.UserId);
+                if (cartDb != null)
+                {
+                    cartDb.CouponCode = cartDto.CartHeader.CouponCode;
+                    _db.CartHeaders.Update(cartDb);
+                    await _db.SaveChangesAsync();
+                    _response.IsSuccess = true;
+                }
+                else
+                {
+                    _response.IsSuccess = false;
+                    _response.Message = "Not found.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.Message = ex.Message;
+            }
+
+            return _response;
+        }
+
+        [HttpPost("RemoveCoupon")]
+        public async Task<ResponseDto> RemoveCoupon([FromBody] CartDto cartDto)
+        {
+            try
+            {
+                var cartDb = await _db.CartHeaders.FirstOrDefaultAsync(ch => ch.UserId == cartDto.CartHeader.UserId);
+                if (cartDb != null)
+                {
+                    cartDb.CouponCode = default;
+                    _db.CartHeaders.Update(cartDb);
+                    await _db.SaveChangesAsync();
+                    _response.IsSuccess = true;
+                }
+                else
+                {
+                    _response.IsSuccess = false;
+                    _response.Message = "Not found.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.Message = ex.Message;
+            }
+
+            return _response;
         }
 
         [HttpGet("getcart/{userId}")]
