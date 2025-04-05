@@ -31,15 +31,15 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             _productService = productService;
         }
 
-        [HttpPost("ApplyCoupon")]
-        public async Task<ResponseDto> ApplyCoupon([FromBody] CartDto cartDto)
+        [HttpPost("applycoupon")]
+        public async Task<ResponseDto> ApplyCoupon([FromBody] CartHeaderDto cartHeaderDto)
         {
             try
             {
-                var cartDb = await _db.CartHeaders.FirstOrDefaultAsync(ch => ch.UserId == cartDto.CartHeader.UserId);
+                var cartDb = await _db.CartHeaders.FirstOrDefaultAsync(ch => ch.UserId == cartHeaderDto.UserId);
                 if (cartDb != null)
                 {
-                    cartDb.CouponCode = string.IsNullOrEmpty(cartDto.CartHeader.CouponCode) ? default : cartDto.CartHeader.CouponCode;
+                    cartDb.CouponCode = string.IsNullOrEmpty(cartHeaderDto.CouponCode) ? default : cartHeaderDto.CouponCode;
                     _db.CartHeaders.Update(cartDb);
                     await _db.SaveChangesAsync();
                     _response.IsSuccess = true;
@@ -147,8 +147,8 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             return _response;
         }
 
-        [HttpPost("RemoveCartDetail")]
-        public async Task<ResponseDto> RemoveCartDetail([FromBody] int carDetailId)
+        [HttpDelete("removecartdetail/{carDetailId: int}")]
+        public async Task<ResponseDto> RemoveCartDetail(int carDetailId)
         {
             try
             {
