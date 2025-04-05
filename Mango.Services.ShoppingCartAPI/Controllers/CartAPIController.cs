@@ -147,7 +147,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             return _response;
         }
 
-        [HttpDelete("removecartdetail/{carDetailId: int}")]
+        [HttpDelete("removecartdetail/{carDetailId:int}")]
         public async Task<ResponseDto> RemoveCartDetail(int carDetailId)
         {
             try
