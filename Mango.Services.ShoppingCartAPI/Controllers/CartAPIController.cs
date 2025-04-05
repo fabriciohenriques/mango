@@ -3,13 +3,16 @@ using Mango.Services.ShoppingCartAPI.Data;
 using Mango.Services.ShoppingCartAPI.Models;
 using Mango.Services.ShoppingCartAPI.Models.Dto;
 using Mango.Services.ShoppingCartAPI.Service.IService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Mango.Services.ShoppingCartAPI.Controllers
 {
     [Route("api/cart")]
     [ApiController]
+    [Authorize]
     public class CartAPIController : ControllerBase
     {
         private ResponseDto _response;
@@ -59,11 +62,13 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             return _response;
         }
 
-        [HttpGet("getcart/{userId}")]
-        public async Task<ResponseDto> GetCart(Guid userId)
+        [HttpGet("getcart")]
+        public async Task<ResponseDto> GetCart()
         {
             try
             {
+                var userId = new Guid(User.Claims.FirstOrDefault(u => u.Type == ClaimTypes.NameIdentifier)?.Value);
+
                 var cartDb = await _db.CartHeaders.Include(ch => ch.CartDetails).FirstOrDefaultAsync(ch => ch.UserId == userId);
 
                 var products = await _productService.GetProducts();
