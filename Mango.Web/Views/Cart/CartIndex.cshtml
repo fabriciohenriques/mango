@@ -1,5 +1,6 @@
 ﻿@model CartDto
 <form method="post">
+    <input asp-for="CartHeader.CartHeaderId" hidden />
     <br />
     <div class="">
         <div class="card border mt-4 container">
@@ -47,7 +48,7 @@
                             <span style="font-size:17px;">@cartDetail.Count</span>
                         </div>
                         <div class="col-2 col-lg-1 p-0 pt-lg-4 text-center">
-                            <a asp-action="Remove" asp-route-cartDetailsId="@cartDetail.CartDetailsId" class="btn btn-sm btn-danger">
+                            <a asp-action="Remove" asp-route-cartDetailId="@cartDetail.CartDetailsId" class="btn btn-sm btn-danger">
                                 <i class="bi bi-trash-fill"></i>
                             </a>
                         </div>
@@ -57,8 +58,16 @@
                 <div class="row">
                     <div class="col-6">
                         <span>Coupon:</span>
-                        <input />
-                        <button type="submit" class="btn btn-sm btn-success"> Apply </button>
+                        @if (string.IsNullOrEmpty(Model.CartHeader.CouponCode))
+                        {
+                            <input asp-for="CartHeader.CouponCode" />
+                            <button asp-action="ApplyCoupon" type="submit" class="btn btn-sm btn-success"> Apply </button>
+                        }
+                        else
+                        {
+                            <input asp-for="CartHeader.CouponCode" disabled />
+                            <button asp-action="RemoveCoupon" type="submit" class="btn btn-sm btn-danger"> Remove </button>
+                        }
                     </div>
                     <div class="col-6 text-end">
                         <span class="text-danger" style="font-size:21px;">  Order Total : @Model.CartHeader.CartTotal.ToString("C2") <br /></span>

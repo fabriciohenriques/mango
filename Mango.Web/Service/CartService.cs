@@ -33,7 +33,7 @@ namespace Mango.Web.Service
             {
                 ApiType = SD.ApiType.DELETE,
                 Data = cartDetailId,
-                Url = SD.CartAPIBase + $"/api/cart/removecartdetail{cartDetailId}",
+                Url = SD.CartAPIBase + $"/api/cart/removecartdetail/{cartDetailId}",
             });
 
         public async Task<ResponseDto?> UpsertCartAsync(CartDto cartDto) =>

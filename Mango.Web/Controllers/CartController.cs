@@ -16,10 +16,43 @@ namespace Mango.Web.Controllers
             _cartService = cartService;
         }
 
-        [Authorize]
         public async Task<IActionResult> CartIndex()
         {
             return View(await LoadCartBasedOnLoggenInUser());
+        }
+
+        public async Task<IActionResult> Remove(int cartDetailId)
+        {
+            var response = await _cartService.RemoveFromCartAsync(cartDetailId);
+            if (response != null && response.IsSuccess)
+                TempData["success"] = "Cart updated successfully";
+            else
+                TempData["error"] = response?.Message;
+
+            return RedirectToAction(nameof(CartIndex));
+        }
+
+        public async Task<IActionResult> ApplyCoupon(CartDto cartDto)
+        {
+            var response = await _cartService.ApplyCouponAsync(cartDto.CartHeader);
+            if (response != null && response.IsSuccess)
+                TempData["success"] = "Coupon applied successfully";
+            else
+                TempData["error"] = response?.Message;
+
+            return RedirectToAction(nameof(CartIndex));
+        }
+
+        public async Task<IActionResult> RemoveCoupon(CartDto cartDto)
+        {
+            cartDto.CartHeader.CouponCode = string.Empty;
+            var response = await _cartService.ApplyCouponAsync(cartDto.CartHeader);
+            if (response != null && response.IsSuccess)
+                TempData["success"] = "Coupon applied successfully";
+            else
+                TempData["error"] = response?.Message;
+
+            return RedirectToAction(nameof(CartIndex));
         }
 
         private async Task<CartDto> LoadCartBasedOnLoggenInUser()
@@ -28,7 +61,11 @@ namespace Mango.Web.Controllers
             if (response != null && response.IsSuccess && response.Result != null)
                 return JsonConvert.DeserializeObject<CartDto>(response.Result.ToString());
 
-            return default;
+            return new CartDto
+            {
+                CartHeader = new CartHeaderDto(),
+                CartDetails = new List<CartDetailDto>()
+            };
         }
     }
 }

@@ -72,6 +72,13 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
 
                 var cartDb = await _db.CartHeaders.Include(ch => ch.CartDetails).FirstOrDefaultAsync(ch => ch.UserId == userId);
 
+                if (cartDb == null)
+                {
+                    _response.IsSuccess = false;
+                    _response.Message = "Cart not found.";
+                    return _response;
+                }
+
                 var products = await _productService.GetProducts();
 
                 var cartDto = new CartDto
@@ -90,9 +97,11 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                 {
                     var coupon = await _couponService.GetCouponByCode(cartDb.CouponCode);
 
-                    cartDto.CartHeader.Discount = coupon.DiscountAmount;
                     if (coupon != null && cartDto.CartHeader.CartTotal >= coupon.MinAmount)
-                        cartDto.CartHeader.CartTotal -= cartDto.CartHeader.CartTotal * coupon.DiscountAmount / 100;
+                    {
+                        cartDto.CartHeader.Discount = cartDto.CartHeader.CartTotal * coupon.DiscountAmount / 100;
+                        cartDto.CartHeader.CartTotal -= cartDto.CartHeader.Discount;
+                    }
                 }
 
                 _response.Result = cartDto;
@@ -160,7 +169,16 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         {
             try
             {
-                var cartDetail = await _db.CartDetails.FirstOrDefaultAsync(cd => cd.CartDetailsId == carDetailId);
+                var cartDetail = await _db.CartDetails.Include(cd => cd.CartHeader).FirstOrDefaultAsync(cd => cd.CartDetailsId == carDetailId);
+
+                var userId = GetUserId();
+
+                if (cartDetail?.CartHeader.UserId != userId)
+                {
+                    _response.Message = "Unauthorized user.";
+                    _response.IsSuccess = false;
+                    return _response;
+                }
 
                 if (cartDetail != null)
                 {
@@ -177,9 +195,11 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
 
                     _response.IsSuccess = true;
                 }
-
-                _response.Message = "Cart Detail not found.";
-                _response.IsSuccess = false;
+                else
+                {
+                    _response.Message = "Cart Detail not found.";
+                    _response.IsSuccess = false;
+                }
             }
             catch (Exception ex)
             {
