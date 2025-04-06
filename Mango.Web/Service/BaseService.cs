@@ -26,7 +26,7 @@ namespace Mango.Web.Service
                 var client = _httpClientFactory.CreateClient("MangoAPI");
                 var message = new HttpRequestMessage();
                 message.Headers.Add("Accept", APPLICATION_JSON);
-                
+
                 if (withBearer)
                 {
                     var token = _tokenProvider.GetToken();
@@ -60,6 +60,8 @@ namespace Mango.Web.Service
                         return new() { IsSuccess = false, Message = "Not Found" };
                     case System.Net.HttpStatusCode.InternalServerError:
                         return new() { IsSuccess = false, Message = "Internal Server Error" };
+                    case System.Net.HttpStatusCode.BadRequest:
+                        return new() { IsSuccess = false, Message = "Bad Request" };
                     default:
                         var apiContent = await apiResponse.Content.ReadAsStringAsync();
                         return JsonConvert.DeserializeObject<ResponseDto>(apiContent);

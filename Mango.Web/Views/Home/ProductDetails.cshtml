@@ -4,7 +4,8 @@
     ViewData["Title"] = "Home Page";
 }
 
-<form method="post">
+<form method="post" asp-controller="Home" asp-action="ProductDetails">
+    <input type="hidden" asp-for="ProductId" />
     <div class=" pt-4">
         <div class="card container" style="border:1px solid #808080;">
             <div class="card-header bg-dark text-light row" style="border-radius: 0px;">

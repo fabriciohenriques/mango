@@ -3,13 +3,16 @@ using Mango.Services.ShoppingCartAPI.Data;
 using Mango.Services.ShoppingCartAPI.Models;
 using Mango.Services.ShoppingCartAPI.Models.Dto;
 using Mango.Services.ShoppingCartAPI.Service.IService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Mango.Services.ShoppingCartAPI.Controllers
 {
     [Route("api/cart")]
     [ApiController]
+    [Authorize]
     public class CartAPIController : ControllerBase
     {
         private ResponseDto _response;
@@ -31,15 +34,16 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             _productService = productService;
         }
 
-        [HttpPost("ApplyCoupon")]
-        public async Task<ResponseDto> ApplyCoupon([FromBody] CartDto cartDto)
+        [HttpPost("applycoupon")]
+        public async Task<ResponseDto> ApplyCoupon([FromBody] CartHeaderDto cartHeaderDto)
         {
             try
             {
-                var cartDb = await _db.CartHeaders.FirstOrDefaultAsync(ch => ch.UserId == cartDto.CartHeader.UserId);
+                var userId = GetUserId();
+                var cartDb = await _db.CartHeaders.FirstOrDefaultAsync(ch => ch.UserId == userId);
                 if (cartDb != null)
                 {
-                    cartDb.CouponCode = string.IsNullOrEmpty(cartDto.CartHeader.CouponCode) ? default : cartDto.CartHeader.CouponCode;
+                    cartDb.CouponCode = string.IsNullOrEmpty(cartHeaderDto.CouponCode) ? default : cartHeaderDto.CouponCode;
                     _db.CartHeaders.Update(cartDb);
                     await _db.SaveChangesAsync();
                     _response.IsSuccess = true;
@@ -59,12 +63,21 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             return _response;
         }
 
-        [HttpGet("getcart/{userId}")]
-        public async Task<ResponseDto> GetCart(Guid userId)
+        [HttpGet("getcart")]
+        public async Task<ResponseDto> GetCart()
         {
             try
             {
+                var userId = GetUserId();
+
                 var cartDb = await _db.CartHeaders.Include(ch => ch.CartDetails).FirstOrDefaultAsync(ch => ch.UserId == userId);
+
+                if (cartDb == null)
+                {
+                    _response.IsSuccess = false;
+                    _response.Message = "Cart not found.";
+                    return _response;
+                }
 
                 var products = await _productService.GetProducts();
 
@@ -84,9 +97,11 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                 {
                     var coupon = await _couponService.GetCouponByCode(cartDb.CouponCode);
 
-                    cartDto.CartHeader.Discount = coupon.DiscountAmount;
                     if (coupon != null && cartDto.CartHeader.CartTotal >= coupon.MinAmount)
-                        cartDto.CartHeader.CartTotal -= cartDto.CartHeader.CartTotal * coupon.DiscountAmount / 100;
+                    {
+                        cartDto.CartHeader.Discount = cartDto.CartHeader.CartTotal * coupon.DiscountAmount / 100;
+                        cartDto.CartHeader.CartTotal -= cartDto.CartHeader.Discount;
+                    }
                 }
 
                 _response.Result = cartDto;
@@ -99,17 +114,19 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
 
             return _response;
         }
-        [HttpPost]
+        [HttpPost("cartupsert")]
         public async Task<ResponseDto> CartUpsert(CartDto cartDto)
         {
             try
             {
-                var cartHeaderFromDb = await _db.CartHeaders.FirstOrDefaultAsync(c => c.UserId == cartDto.CartHeader.UserId);
+                var userId = GetUserId();
+                var cartHeaderFromDb = await _db.CartHeaders.FirstOrDefaultAsync(c => c.UserId == userId);
 
                 if (cartHeaderFromDb == null)
                 {
                     //create header and detail
                     var cartHeader = _mapper.Map<CartHeader>(cartDto.CartHeader);
+                    cartHeader.UserId = userId;
                     var cartHeaderToDb = await _db.AddAsync(cartHeader);
                     var cartDetail = _mapper.Map<CartDetail>(cartDto.CartDetails.First());
                     cartDetail.CartHeader = cartHeader;
@@ -147,12 +164,21 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             return _response;
         }
 
-        [HttpPost("RemoveCartDetail")]
-        public async Task<ResponseDto> RemoveCartDetail([FromBody] int carDetailId)
+        [HttpDelete("removecartdetail/{carDetailId:int}")]
+        public async Task<ResponseDto> RemoveCartDetail(int carDetailId)
         {
             try
             {
-                var cartDetail = await _db.CartDetails.FirstOrDefaultAsync(cd => cd.CartDetailsId == carDetailId);
+                var cartDetail = await _db.CartDetails.Include(cd => cd.CartHeader).FirstOrDefaultAsync(cd => cd.CartDetailsId == carDetailId);
+
+                var userId = GetUserId();
+
+                if (cartDetail?.CartHeader.UserId != userId)
+                {
+                    _response.Message = "Unauthorized user.";
+                    _response.IsSuccess = false;
+                    return _response;
+                }
 
                 if (cartDetail != null)
                 {
@@ -169,9 +195,11 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
 
                     _response.IsSuccess = true;
                 }
-
-                _response.Message = "Cart Detail not found.";
-                _response.IsSuccess = false;
+                else
+                {
+                    _response.Message = "Cart Detail not found.";
+                    _response.IsSuccess = false;
+                }
             }
             catch (Exception ex)
             {
@@ -181,5 +209,8 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
 
             return _response;
         }
+
+        private Guid GetUserId() =>
+            new Guid(User.Claims.FirstOrDefault(u => u.Type == ClaimTypes.NameIdentifier)?.Value);
     }
 }
