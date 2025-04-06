@@ -2,6 +2,6 @@
 {
     public class LoginResponseDto : UserDto
     {
-        public string Token { get; set; }
+        public string? Token { get; set; }
     }
 }

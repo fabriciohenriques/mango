@@ -9,14 +9,14 @@ namespace Mango.Web.Controllers;
 
 public class HomeController : Controller
 {
-    private readonly ILogger<HomeController> _logger;
+    private readonly ICartService _cartService;
     private readonly IProductService _productService;
 
     public HomeController(
-        ILogger<HomeController> logger,
+        ICartService cartService,
         IProductService productService)
     {
-        _logger = logger;
+        _cartService = cartService;
         _productService = productService;
     }
 
@@ -24,7 +24,7 @@ public class HomeController : Controller
     {
         var list = new List<ProductDto>();
         var response = await _productService.GetAllProductsAsync();
-        if (response != null && response.IsSuccess)
+        if (response != null && response.IsSuccess && response.Result != null)
             list = JsonConvert.DeserializeObject<List<ProductDto>>(response.Result.ToString());
         else
             TempData["error"] = response?.Message;
@@ -45,6 +45,35 @@ public class HomeController : Controller
             TempData["error"] = response?.Message;
 
         return RedirectToAction(nameof(Index));
+    }
+
+    [Authorize]
+    [HttpPost]
+    public async Task<IActionResult> ProductDetails(ProductDto productDto)
+    {
+        var cartDto = new CartDto
+        {
+            CartHeader = new CartHeaderDto(),
+            CartDetails =
+            [
+                new()
+                {
+                    Count = productDto.Count,
+                    ProductId = productDto.ProductId,
+                }
+            ]
+        };
+        var response = await _cartService.UpsertCartAsync(cartDto);
+        if (response != null && response.IsSuccess)
+        {
+            TempData["success"] = "Product added to cart successfully.";
+            return RedirectToAction(nameof(Index));
+        }
+        else
+        {
+            TempData["error"] = response?.Message;
+            return View(productDto);
+        }
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

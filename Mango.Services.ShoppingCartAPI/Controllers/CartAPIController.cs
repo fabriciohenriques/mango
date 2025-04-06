@@ -39,7 +39,8 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         {
             try
             {
-                var cartDb = await _db.CartHeaders.FirstOrDefaultAsync(ch => ch.UserId == cartHeaderDto.UserId);
+                var userId = GetUserId();
+                var cartDb = await _db.CartHeaders.FirstOrDefaultAsync(ch => ch.UserId == userId);
                 if (cartDb != null)
                 {
                     cartDb.CouponCode = string.IsNullOrEmpty(cartHeaderDto.CouponCode) ? default : cartHeaderDto.CouponCode;
@@ -67,7 +68,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         {
             try
             {
-                var userId = new Guid(User.Claims.FirstOrDefault(u => u.Type == ClaimTypes.NameIdentifier)?.Value);
+                var userId = GetUserId();
 
                 var cartDb = await _db.CartHeaders.Include(ch => ch.CartDetails).FirstOrDefaultAsync(ch => ch.UserId == userId);
 
@@ -104,17 +105,19 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
 
             return _response;
         }
-        [HttpPost]
+        [HttpPost("cartupsert")]
         public async Task<ResponseDto> CartUpsert(CartDto cartDto)
         {
             try
             {
-                var cartHeaderFromDb = await _db.CartHeaders.FirstOrDefaultAsync(c => c.UserId == cartDto.CartHeader.UserId);
+                var userId = GetUserId();
+                var cartHeaderFromDb = await _db.CartHeaders.FirstOrDefaultAsync(c => c.UserId == userId);
 
                 if (cartHeaderFromDb == null)
                 {
                     //create header and detail
                     var cartHeader = _mapper.Map<CartHeader>(cartDto.CartHeader);
+                    cartHeader.UserId = userId;
                     var cartHeaderToDb = await _db.AddAsync(cartHeader);
                     var cartDetail = _mapper.Map<CartDetail>(cartDto.CartDetails.First());
                     cartDetail.CartHeader = cartHeader;
@@ -186,5 +189,8 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
 
             return _response;
         }
+
+        private Guid GetUserId() =>
+            new Guid(User.Claims.FirstOrDefault(u => u.Type == ClaimTypes.NameIdentifier)?.Value);
     }
 }
