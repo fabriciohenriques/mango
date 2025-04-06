@@ -1,4 +1,6 @@
 ﻿@model CartDto
+@if (Model.CartHeader != null && Model.CartDetails?.Count() > 0)
+{
 <form method="post">
     <input asp-for="CartHeader.CartHeaderId" hidden />
     <br />
@@ -86,3 +88,15 @@
         </div>
     </div>
 </form>
+}
+else
+{
+    <div class="container mt-4">
+        <div class="alert alert-warning text-center">
+            <h3><i class="bi bi-cart"></i> &nbsp; Shopping Cart</h3>
+            <p>Your cart is empty.</p>
+            <a asp-action="Index" asp-controller="Home" class="btn btn-outline-warning">Continue Shopping</a>
+        </div>
+    </div>
+
+}
