@@ -1,4 +1,5 @@
 using AutoMapper;
+using Mango.ServiceBus;
 using Mango.Services.AuthAPI;
 using Mango.Services.AuthAPI.Data;
 using Mango.Services.AuthAPI.Models;
@@ -20,9 +21,10 @@ builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("ApiSett
 IMapper mapper = MappingConfig.RegisterMaps().CreateMapper();
 builder.Services.AddSingleton(mapper);
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-
+builder.Services.AddScoped<IMessageBus, MessageBus>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.Configure<ServiceBusConfig>(builder.Configuration.GetSection("ServiceBusConfig"));
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

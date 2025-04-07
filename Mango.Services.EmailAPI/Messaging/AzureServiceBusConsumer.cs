@@ -13,6 +13,7 @@ namespace Mango.Services.EmailAPI.Messaging
         private readonly EmailService _emailService;
         private readonly ServiceBusConfig _serviceBusConfig;
         private readonly ServiceBusProcessor _emailCartProcessor;
+        private readonly ServiceBusProcessor _registeredUsersProcessor;
 
         public AzureServiceBusConsumer(
             EmailService emailService,
@@ -23,6 +24,7 @@ namespace Mango.Services.EmailAPI.Messaging
 
             var client = new ServiceBusClient(_serviceBusConfig.ConnectionString);
             _emailCartProcessor = client.CreateProcessor(_serviceBusConfig.EmailShoppingCartQueue);
+            _registeredUsersProcessor = client.CreateProcessor(_serviceBusConfig.RegisteredUsersQueue);
         }
 
         public async Task Start()
@@ -30,6 +32,27 @@ namespace Mango.Services.EmailAPI.Messaging
             _emailCartProcessor.ProcessMessageAsync += OnEmailCartRequestReceived;
             _emailCartProcessor.ProcessErrorAsync += ErrorHandler;
             await _emailCartProcessor.StartProcessingAsync();
+
+            _registeredUsersProcessor.ProcessMessageAsync += OnRegisteredUserRequestReceived;
+            _registeredUsersProcessor.ProcessErrorAsync += ErrorHandler;
+            await _registeredUsersProcessor.StartProcessingAsync();
+        }
+
+        private async Task OnRegisteredUserRequestReceived(ProcessMessageEventArgs args)
+        {
+            var message = args.Message;
+            var body = Encoding.UTF8.GetString(message.Body);
+            var email = JsonConvert.DeserializeObject<string>(body);
+
+            try
+            {
+                await _emailService.LogRegisteredUser(email);
+                await args.CompleteMessageAsync(message);
+            }
+            catch
+            {
+                throw;
+            }
         }
 
         private async Task OnEmailCartRequestReceived(ProcessMessageEventArgs args)
@@ -60,6 +83,9 @@ namespace Mango.Services.EmailAPI.Messaging
         {
             await _emailCartProcessor.StopProcessingAsync();
             await _emailCartProcessor.DisposeAsync();
+
+            await _registeredUsersProcessor.StopProcessingAsync();
+            await _registeredUsersProcessor.DisposeAsync();
         }
     }
 }
