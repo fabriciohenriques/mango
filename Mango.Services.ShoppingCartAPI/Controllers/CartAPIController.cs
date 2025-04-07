@@ -76,40 +76,13 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         {
             try
             {
-                var userId = GetUserId();
+                var cartDto = await GetCartForUser();
 
-                var cartDb = await _db.CartHeaders.Include(ch => ch.CartDetails).FirstOrDefaultAsync(ch => ch.UserId == userId);
-
-                if (cartDb == null)
+                if (cartDto == null)
                 {
                     _response.IsSuccess = false;
                     _response.Message = "Cart not found.";
                     return _response;
-                }
-
-                var products = await _productService.GetProducts();
-
-                var cartDto = new CartDto
-                {
-                    CartHeader = _mapper.Map<CartHeaderDto>(cartDb),
-                    CartDetails = _mapper.Map<IEnumerable<CartDetailDto>>(cartDb.CartDetails),
-                };
-
-                foreach (var item in cartDto.CartDetails)
-                {
-                    item.Product = products.FirstOrDefault(p => p.ProductId == item.ProductId);
-                    cartDto.CartHeader.CartTotal += item.Count * item.Product.Price;
-                }
-
-                if (!string.IsNullOrEmpty(cartDb.CouponCode))
-                {
-                    var coupon = await _couponService.GetCouponByCode(cartDb.CouponCode);
-
-                    if (coupon != null && cartDto.CartHeader.CartTotal >= coupon.MinAmount)
-                    {
-                        cartDto.CartHeader.Discount = cartDto.CartHeader.CartTotal * coupon.DiscountAmount / 100;
-                        cartDto.CartHeader.CartTotal -= cartDto.CartHeader.Discount;
-                    }
                 }
 
                 _response.Result = cartDto;
@@ -219,11 +192,26 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         }
 
         [HttpPost("emailcartrequest")]
-        public async Task<ResponseDto> EmailCartRequest([FromBody] CartDto cartDto)
+        public async Task<ResponseDto> EmailCartRequest()
         {
             try
             {
-                await _messageBus.PublishMessage(cartDto, _serviceBusConfig.EmailShoppingCart, _serviceBusConfig.ConnectionString);
+                var cartDto = await GetCartForUser();
+
+                if (cartDto == null)
+                {
+                    _response.IsSuccess = false;
+                    _response.Message = "Cart not found.";
+                    return _response;
+                }
+
+                var userCartHeaderDto = new
+                {
+                    cartDto.CartHeader,
+                    cartDto.CartDetails,
+                    Email = User.Claims.FirstOrDefault(u => u.Type == ClaimTypes.Email)?.Value,
+                };
+                await _messageBus.PublishMessage(userCartHeaderDto, _serviceBusConfig.EmailShoppingCart, _serviceBusConfig.ConnectionString);
                 _response.IsSuccess = true;
             }
             catch (Exception ex)
@@ -233,6 +221,45 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             }
 
             return _response;
+        }
+
+        private async Task<CartDto?> GetCartForUser()
+        {
+            var userId = GetUserId();
+
+            var cartDb = await _db.CartHeaders.Include(ch => ch.CartDetails).FirstOrDefaultAsync(ch => ch.UserId == userId);
+
+            if (cartDb == null)
+            {
+                return null;
+            }
+
+            var products = await _productService.GetProducts();
+
+            var cartDto = new CartDto
+            {
+                CartHeader = _mapper.Map<CartHeaderDto>(cartDb),
+                CartDetails = _mapper.Map<IEnumerable<CartDetailDto>>(cartDb.CartDetails),
+            };
+
+            foreach (var item in cartDto.CartDetails)
+            {
+                item.Product = products.FirstOrDefault(p => p.ProductId == item.ProductId);
+                cartDto.CartHeader.CartTotal += item.Count * item.Product.Price;
+            }
+
+            if (!string.IsNullOrEmpty(cartDb.CouponCode))
+            {
+                var coupon = await _couponService.GetCouponByCode(cartDb.CouponCode);
+
+                if (coupon != null && cartDto.CartHeader.CartTotal >= coupon.MinAmount)
+                {
+                    cartDto.CartHeader.Discount = cartDto.CartHeader.CartTotal * coupon.DiscountAmount / 100;
+                    cartDto.CartHeader.CartTotal -= cartDto.CartHeader.Discount;
+                }
+            }
+
+            return cartDto;
         }
 
         private Guid GetUserId() =>

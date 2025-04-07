@@ -44,11 +44,10 @@ namespace Mango.Web.Service
                 Url = SD.CartAPIBase + "/api/cart/cartupsert",
             });
 
-        public async Task<ResponseDto?> EmailCartAsync(CartDto cartDto) =>
+        public async Task<ResponseDto?> EmailCartAsync() =>
             await SendAsync(new RequestDto
             {
                 ApiType = SD.ApiType.POST,
-                Data = cartDto,
                 Url = SD.CartAPIBase + $"/api/cart/emailcartrequest",
             });
     }
