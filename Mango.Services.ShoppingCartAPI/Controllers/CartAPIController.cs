@@ -211,7 +211,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                     cartDto.CartDetails,
                     Email = User.Claims.FirstOrDefault(u => u.Type == ClaimTypes.Email)?.Value,
                 };
-                await _messageBus.PublishMessage(userCartHeaderDto, _serviceBusConfig.EmailShoppingCart, _serviceBusConfig.ConnectionString);
+                await _messageBus.PublishMessage(userCartHeaderDto, _serviceBusConfig.EmailShoppingCartQueue, _serviceBusConfig.ConnectionString);
                 _response.IsSuccess = true;
             }
             catch (Exception ex)

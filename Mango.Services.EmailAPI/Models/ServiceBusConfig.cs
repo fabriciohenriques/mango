@@ -1,4 +1,4 @@
-﻿namespace Mango.Services.ShoppingCartAPI.Models
+﻿namespace Mango.Services.EmailAPI.Models
 {
     public class ServiceBusConfig
     {
