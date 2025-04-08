@@ -23,6 +23,9 @@ namespace Mango.Web.Controllers
 
         public async Task<IActionResult> Checkout()
         {
+            ViewData["Name"] = User.Claims.FirstOrDefault(x => x.Type == "given_name")?.Value;
+            ViewData["Email"] = User.Claims.FirstOrDefault(x => x.Type == "email")?.Value;
+            
             return View(await LoadCartBasedOnLoggenInUser());
         }
 
